@@ -1,0 +1,27 @@
+// Enter credentials and rename to config.json
+
+{
+    "poll_interval_minutes": 10,
+    "ebay": {
+        "client_id": "YOUR_EBAY_APP_ID",
+        "client_secret": "YOUR_EBAY_CERT_ID",
+        "ru_name": "YOUR_EBAY_RU_NAME"
+    },
+    "notifications": {
+        "email": {
+            "enabled": false,
+            "smtp_server": "smtp.gmail.com",
+            "smtp_port": 587,
+            "sender_email": "your_email@gmail.com",
+            "sender_password": "your_app_password",
+            "recipient_email": "alert_destination@gmail.com"
+        },
+        "sms": {
+            "enabled": false,
+            "twilio_account_sid": "YOUR_TWILIO_SID",
+            "twilio_auth_token": "YOUR_TWILIO_TOKEN",
+            "from_number": "+1234567890",
+            "to_number": "+0987654321"
+        }
+    }
+}
