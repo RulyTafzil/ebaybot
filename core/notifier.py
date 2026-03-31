@@ -1,4 +1,5 @@
 import smtplib
+import ssl
 from email.mime.text import MIMEText
 import os
 from typing import Any, Dict, Optional
@@ -36,11 +37,20 @@ def send_alerts(new_items, search_keyword, config: Optional[AppConfig] = None):
             msg['From'] = em_conf['sender_email']
             msg['To'] = em_conf['recipient_email']
 
-            server = smtplib.SMTP(em_conf['smtp_server'], em_conf['smtp_port'])
-            server.starttls()
-            server.login(em_conf['sender_email'], em_conf['sender_password'])
-            server.send_message(msg)
-            server.quit()
+            host, port = em_conf['smtp_server'], em_conf['smtp_port']
+            if port == 465:
+                # Implicit SSL — TLS wraps the connection from the start
+                with smtplib.SMTP_SSL(host, port, context=ssl.create_default_context()) as server:
+                    server.login(em_conf['sender_email'], em_conf['sender_password'])
+                    server.send_message(msg)
+            else:
+                # STARTTLS — plain connection upgraded to TLS mid-handshake (port 587/25)
+                with smtplib.SMTP(host, port) as server:
+                    server.ehlo()
+                    server.starttls()
+                    server.ehlo()
+                    server.login(em_conf['sender_email'], em_conf['sender_password'])
+                    server.send_message(msg)
             print("[✓] Email alert sent.")
         except Exception as e:
             print(f"[x] Email failed: {e}")
