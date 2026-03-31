@@ -1,11 +1,17 @@
-// Enter credentials and rename to config.json
-
 {
     "poll_interval_minutes": 10,
     "ebay": {
-        "client_id": "YOUR_EBAY_APP_ID",
-        "client_secret": "YOUR_EBAY_CERT_ID",
-        "ru_name": "YOUR_EBAY_RU_NAME"
+        "mode": "sandbox",
+        "marketplace_id": "EBAY_US",
+        "currency": "USD",
+        "sandbox": {
+            "client_id": "YOUR_SANDBOX_EBAY_CLIENT_ID",
+            "client_secret": "YOUR_SANDBOX_EBAY_CLIENT_SECRET"
+        },
+        "production": {
+            "client_id": "YOUR_PROD_EBAY_CLIENT_ID",
+            "client_secret": "YOUR_PROD_EBAY_CLIENT_SECRET"
+        }
     },
     "notifications": {
         "email": {

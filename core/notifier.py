@@ -1,16 +1,26 @@
 import smtplib
 from email.mime.text import MIMEText
-from twilio.rest import Client
-import json
 import os
+from typing import Any, Dict, Optional
 
-CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.json')
-with open(CONFIG_PATH) as f:
-    config = json.load(f)
+from core.config import AppConfig, load_config
 
-def send_alerts(new_items, search_keyword):
+CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config.json")
+
+def _safe_get(d: Dict[str, Any], *keys: str, default: Any = None) -> Any:
+    cur: Any = d
+    for k in keys:
+        if not isinstance(cur, dict) or k not in cur:
+            return default
+        cur = cur[k]
+    return cur
+
+
+def send_alerts(new_items, search_keyword, config: Optional[AppConfig] = None):
     if not new_items:
         return
+
+    cfg = config or load_config(CONFIG_PATH)
 
     message_body = f"eBay Alert for '{search_keyword}': Found {len(new_items)} new items!\n\n"
     for item in new_items:
@@ -18,9 +28,9 @@ def send_alerts(new_items, search_keyword):
         message_body += f"- {item['title'][:40]}... | ${price}\n{item['itemWebUrl']}\n\n"
 
     # Send Email
-    if config['notifications']['email']['enabled']:
+    if _safe_get(cfg.notifications, "email", "enabled", default=False):
         try:
-            em_conf = config['notifications']['email']
+            em_conf = _safe_get(cfg.notifications, "email", default={}) or {}
             msg = MIMEText(message_body)
             msg['Subject'] = f"eBay Sniper Alert: {search_keyword}"
             msg['From'] = em_conf['sender_email']
@@ -36,9 +46,16 @@ def send_alerts(new_items, search_keyword):
             print(f"[x] Email failed: {e}")
 
     # Send SMS
-    if config['notifications']['sms']['enabled']:
+    if _safe_get(cfg.notifications, "sms", "enabled", default=False):
         try:
-            sms_conf = config['notifications']['sms']
+            try:
+                from twilio.rest import Client  # optional dependency
+            except Exception as e:
+                raise RuntimeError(
+                    "SMS notifications enabled but 'twilio' is not installed. Install requirements.txt or disable SMS."
+                ) from e
+
+            sms_conf = _safe_get(cfg.notifications, "sms", default={}) or {}
             client = Client(sms_conf['twilio_account_sid'], sms_conf['twilio_auth_token'])
             client.messages.create(
                 body=message_body[:1600], # Twilio max length safety

@@ -2,3 +2,4 @@ config.json
 data/tracker.db
 **/__pycache__/
 *.pyc
+.aider*

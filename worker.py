@@ -3,7 +3,8 @@ import time
 import json
 import os
 import datetime
-from core.db import init_db, get_active_searches, item_seen, mark_item_seen
+from core.db import init_db, get_active_searches, item_seen, mark_item_seen, record_alerts
+from core.config import load_config
 from core.ebay_api import search_ebay
 from core.notifier import send_alerts
 
@@ -14,10 +15,8 @@ def log(msg):
 
 def run_loop():
     init_db()
-    with open(CONFIG_PATH) as f:
-        config = json.load(f)
-    
-    poll_seconds = config.get("poll_interval_minutes", 10) * 60
+    config = load_config(CONFIG_PATH)
+    poll_seconds = config.poll_interval_minutes * 60
 
     log("eBay Sniper Worker Started...")
 
@@ -42,13 +41,14 @@ def run_loop():
             new_items = []
             for item in items:
                 item_id = item['itemId']
-                if not item_seen(item_id):
+                if not item_seen(search_id, item_id):
                     mark_item_seen(item_id, search_id)
                     new_items.append(item)
 
             if new_items:
                 log(f"Found {len(new_items)} new items for '{keyword}'! Sending alerts...")
-                send_alerts(new_items, keyword)
+                record_alerts(search_id, new_items)
+                send_alerts(new_items, keyword, config=config)
                 
             time.sleep(1) # Tiny sleep to avoid slamming the API instantly if you have many searches
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import argparse
-import json
 from core.db import init_db, add_search, get_active_searches, delete_search, get_total_seen_count
 from tabulate import tabulate
+from core.config import load_config, default_config_path
 
 def setup():
     init_db()
@@ -50,11 +50,9 @@ def main():
         print(f"Deleted search ID {args.id}.")
 
     elif args.command == "status":
-        with open('config.json') as f:
-            config = json.load(f)
-        
+        config = load_config(default_config_path())
         active_searches = len(get_active_searches())
-        poll_interval = config.get("poll_interval_minutes", 10)
+        poll_interval = config.poll_interval_minutes
         
         # Calculate API Usage
         # Number of searches * times polled per hour * 24 hours
@@ -68,6 +66,7 @@ def main():
         print(f"Active Searches: {active_searches}")
         print(f"Polling Interval: Every {poll_interval} minutes")
         print(f"Total Unique Items Processed (Lifetime): {get_total_seen_count()}")
+        print(f"Mode: {config.ebay.mode}")
         print("\n=== DAILY API USAGE CALCULATION ===")
         print(f"Estimated API Calls / Day:  {total_estimated}")
         print(f"eBay Default Daily Limit:   {daily_limit}")
